@@ -1,0 +1,83 @@
+﻿@page "/category/insert"
+@page "/category/update/{Id:int}"
+@inject ICategoryRepository _categoryService
+@inject NavigationManager _navigationManager
+@inject IJSRuntime _js
+@if (IsProcessing)
+{
+
+}
+else
+{
+    <div class="card border-0 mt-4">
+        <div class="card-header bg-black ml-0 py-3">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h2 class="text-primary py-2">@(Id > 0 ? "Create":"Update")Category</h2>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="row">
+                <EditForm Model="category" FormName="Category Upsert Form" OnValidSubmit="UpsertCategory">
+                <DataAnnotationsValidator></DataAnnotationsValidator>
+                <div class="border p-3 mt-4">
+                    <div class="form-floating py-3 col-12">
+                        <InputText id="name" class="form-control" @bind-Value="category.Name" placeholder="Category Name" />
+                        <label for="name">Category Name</label>
+                        <ValidationMessage For="@(() => category.Name)"></ValidationMessage>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-primary" style="width:250px">@((Id > 0) ? "Update Category" : "Create Category")</button>
+                        </div>
+                    </div>
+                </div>
+                </EditForm>
+            <p>Category List</p>
+            </div>
+        </div>
+    </div>
+   
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    [SupplyParameterFromForm]
+    private Category category{ get; set; }   = new Category();
+
+    public bool IsProcessing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategory() ;
+
+    }
+    private async Task LoadCategory()
+    {
+        if (Id > 0)
+        {
+            // Load the category for update
+            category = await _categoryService.GetAsync(Id);
+        }
+    }
+    private async Task UpsertCategory()
+    {
+        IsProcessing = true;
+        if (Id > 0)
+        {
+            // Update existing category
+            await _categoryService.UpdateAsync(category);
+            await _js.ToastrSuccess("category updated successfully");
+        }
+        else
+        {
+            // Create new category
+            await _categoryService.CreateAsync(category);
+            await _js.ToastrInfo("category created successfully");
+        }
+        IsProcessing = false;
+        _navigationManager.NavigateTo("category");
+    }
+}
